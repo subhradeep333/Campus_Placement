@@ -1,0 +1,26 @@
+[
+  {
+    "id": "JOB501",
+    "title": "Software Engineer I - Backend",
+    "companyName": "Google",
+    "packageLpa": 28.5,
+    "minCgpa": 3.5,
+    "active": true
+  },
+  {
+    "id": "JOB502",
+    "title": "Cloud Solutions Developer",
+    "companyName": "Microsoft",
+    "packageLpa": 26.0,
+    "minCgpa": 3.2,
+    "active": true
+  },
+  {
+    "id": "JOB503",
+    "title": "Quantitative Developer Intern",
+    "companyName": "Apex Financial Technologies",
+    "packageLpa": 32.0,
+    "minCgpa": 3.7,
+    "active": true
+  }
+]

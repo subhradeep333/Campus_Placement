@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Campus Recruitment & Placement Portal</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Navigation Bar -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="#" class="nav-logo" id="logoLink">
+                <div class="logo-icon">🚀</div>
+                <span>Placement<span class="logo-highlight">Hub</span></span>
+            </a>
+            
+            <div class="nav-links">
+                <button class="nav-btn active" id="btnNavJobs" onclick="switchTab('jobsTab')">🌐 Browse Jobs</button>
+                <button class="nav-btn" id="btnNavCompanies" onclick="switchTab('companiesTab')">🏢 Companies</button>
+                <button class="nav-btn student-only hidden" id="btnNavStudentDash" onclick="switchTab('studentDashTab')">🎓 Student Portal</button>
+                <button class="nav-btn company-only hidden" id="btnNavCompanyDash" onclick="switchTab('companyDashTab')">🏢 Company Portal</button>
+            </div>
+
+            <div class="nav-auth">
+                <div id="userInfoChip" class="user-chip hidden">
+                    <span class="user-avatar" id="userAvatar">U</span>
+                    <span id="userName">User</span>
+                    <button class="logout-btn" onclick="logout()" title="Logout">🚪</button>
+                </div>
+                <button id="btnLoginModal" class="primary-btn" onclick="openAuthModal()">🔑 Login / Register</button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Container -->
+    <main class="main-content">
+        <!-- Hero Section -->
+        <section class="hero-section">
+            <div class="hero-content">
+                <div class="badge-pill">✨ Campus Recruitment System 2026</div>
+                <h1 class="hero-title">Launch Your Career with Top Global Companies</h1>
+                <p class="hero-subtitle">Connect students with leading tech & fintech firms. Submit your CV, apply for jobs, and track your recruitment status seamlessly.</p>
+                <div class="hero-stats">
+                    <div class="stat-card">
+                        <span class="stat-num" id="statJobsCount">0</span>
+                        <span class="stat-label">Active Jobs</span>
+                    </div>
+                    <div class="stat-card">
+                        <span class="stat-num" id="statCompaniesCount">0</span>
+                        <span class="stat-label">Partner Companies</span>
+                    </div>
+                    <div class="stat-card">
+                        <span class="stat-num">35.0 LPA</span>
+                        <span class="stat-label">Highest Package</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 1: Browse Jobs View -->
+        <section id="jobsTab" class="tab-content active">
+            <div class="section-header">
+                <div>
+                    <h2>Available Job Openings</h2>
+                    <p>Filter by title, technical skills, or company name</p>
+                </div>
+                <div class="search-bar">
+                    <input type="text" id="jobSearchInput" placeholder="🔍 Search Java, Backend, React, Google..." onkeyup="filterJobs()">
+                </div>
+            </div>
+
+            <div class="jobs-grid" id="jobsGrid">
+                <!-- Job cards rendered dynamically via JS -->
+            </div>
+        </section>
+
+        <!-- TAB 2: Companies View -->
+        <section id="companiesTab" class="tab-content">
+            <div class="section-header">
+                <h2>Partner Companies & Recruiters</h2>
+                <p>Top tier organizations hiring on campus</p>
+            </div>
+            <div class="companies-grid" id="companiesGrid">
+                <!-- Company cards rendered dynamically -->
+            </div>
+        </section>
+
+        <!-- TAB 3: Student Dashboard -->
+        <section id="studentDashTab" class="tab-content">
+            <div class="dashboard-header">
+                <h2>🎓 Student Dashboard</h2>
+                <p id="studentDashWelcome">Welcome to your placement dashboard</p>
+            </div>
+
+            <div class="dashboard-grid">
+                <!-- CV Dossier Form -->
+                <div class="glass-card">
+                    <div class="card-header">
+                        <h3>📄 My CV & Skills Dossier</h3>
+                        <span class="badge" id="cvStatusBadge">Not Submitted</span>
+                    </div>
+                    <form id="cvForm" onsubmit="saveStudentCv(event)">
+                        <div class="form-group">
+                            <label>Technical Skills (comma separated)</label>
+                            <input type="text" id="cvSkills" placeholder="e.g. Java, Spring Boot, React, SQL, Git" required>
+                        </div>
+                        <div class="form-group">
+                            <label>CV Summary & Background Dossier</label>
+                            <textarea id="cvSummary" rows="4" placeholder="Detail your education, projects, achievements, and career goals..." required></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>Attachment Document Path / Link</label>
+                            <input type="text" id="cvFilePath" placeholder="/path/to/Alex_Resume.pdf or Google Drive link">
+                        </div>
+                        <button type="submit" class="submit-btn">💾 Save & Publish CV</button>
+                    </form>
+                </div>
+
+                <!-- Applications Tracker -->
+                <div class="glass-card full-width">
+                    <div class="card-header">
+                        <h3>📊 My Job Application Tracker</h3>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>App ID</th>
+                                    <th>Job Role</th>
+                                    <th>Company</th>
+                                    <th>Applied Date</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="studentAppsTableBody">
+                                <tr><td colspan="5" class="empty-cell">No job applications submitted yet.</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 4: Company Dashboard -->
+        <section id="companyDashTab" class="tab-content">
+            <div class="dashboard-header">
+                <h2>🏢 Company Dashboard</h2>
+                <p id="companyDashWelcome">Manage job listings & evaluate candidates</p>
+            </div>
+
+            <div class="dashboard-grid">
+                <!-- Post Job Form -->
+                <div class="glass-card">
+                    <div class="card-header">
+                        <h3>📌 Post New Job Opening</h3>
+                    </div>
+                    <form id="postJobForm" onsubmit="createJobPosting(event)">
+                        <div class="form-group">
+                            <label>Job Title / Role</label>
+                            <input type="text" id="jobTitle" placeholder="e.g. Senior Backend Engineer" required>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Package (LPA / Annual CTC)</label>
+                                <input type="number" step="0.5" id="jobPackage" placeholder="28.5" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Min CGPA Cutoff</label>
+                                <input type="number" step="0.1" id="jobMinCgpa" placeholder="3.5" required>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Required Technical Skills</label>
+                            <input type="text" id="jobSkills" placeholder="e.g. Java, Distributed Systems, SQL" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Job Description</label>
+                            <textarea id="jobDesc" rows="3" placeholder="Describe key responsibilities and expectations..." required></textarea>
+                        </div>
+                        <button type="submit" class="submit-btn">🚀 Publish Job Opening</button>
+                    </form>
+                </div>
+
+                <!-- Received Applications List -->
+                <div class="glass-card full-width">
+                    <div class="card-header">
+                        <h3>👥 Candidate Applications Received</h3>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>App ID</th>
+                                    <th>Candidate Name</th>
+                                    <th>Branch / CGPA</th>
+                                    <th>Applied Role</th>
+                                    <th>Student CV Dossier</th>
+                                    <th>Hiring Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="companyAppsTableBody">
+                                <tr><td colspan="6" class="empty-cell">No candidate applications received yet.</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Modal 1: Auth (Login / Register) -->
+    <div class="modal-overlay" id="authModal">
+        <div class="modal-card">
+            <button class="close-modal" onclick="closeAuthModal()">✖</button>
+            <div class="modal-tabs">
+                <button class="modal-tab active" id="tabLogin" onclick="switchAuthMode('login')">🔑 Login</button>
+                <button class="modal-tab" id="tabRegister" onclick="switchAuthMode('register')">🎓 Student Register</button>
+                <button class="modal-tab" id="tabCompanyReg" onclick="switchAuthMode('companyReg')">🏢 Company Register</button>
+            </div>
+
+            <!-- Login Form -->
+            <form id="formLogin" class="auth-form active" onsubmit="handleLoginSubmit(event)">
+                <div class="form-group">
+                    <label>Email Address</label>
+                    <input type="email" id="loginEmail" placeholder="alex@university.edu or recruitment@google.com" required>
+                </div>
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="password" id="loginPassword" placeholder="••••••••" required>
+                </div>
+                <button type="submit" class="submit-btn full-btn">Sign In</button>
+                <div class="demo-login-box">
+                    <p>⚡ Quick Demo Accounts:</p>
+                    <button type="button" class="demo-btn" onclick="fillDemo('student')">Student: alex@university.edu</button>
+                    <button type="button" class="demo-btn" onclick="fillDemo('company')">Company: recruitment@google.com</button>
+                </div>
+            </form>
+
+            <!-- Student Registration Form -->
+            <form id="formRegisterStudent" class="auth-form" onsubmit="handleStudentRegisterSubmit(event)">
+                <div class="form-group">
+                    <label>Full Name</label>
+                    <input type="text" id="regStudentName" placeholder="e.g. Alex Rivers" required>
+                </div>
+                <div class="form-group">
+                    <label>Email Address</label>
+                    <input type="email" id="regStudentEmail" placeholder="alex@university.edu" required>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Password</label>
+                        <input type="password" id="regStudentPass" placeholder="••••••••" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Phone Number</label>
+                        <input type="text" id="regStudentPhone" placeholder="+1-555-0192" required>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Branch / Department</label>
+                        <input type="text" id="regStudentBranch" placeholder="Computer Science" required>
+                    </div>
+                    <div class="form-group">
+                        <label>CGPA</label>
+                        <input type="number" step="0.01" id="regStudentCgpa" placeholder="3.85" required>
+                    </div>
+                </div>
+                <button type="submit" class="submit-btn full-btn">Register Student Account</button>
+            </form>
+
+            <!-- Company Registration Form -->
+            <form id="formRegisterCompany" class="auth-form" onsubmit="handleCompanyRegisterSubmit(event)">
+                <div class="form-group">
+                    <label>Company Name</label>
+                    <input type="text" id="regCompName" placeholder="e.g. Google" required>
+                </div>
+                <div class="form-group">
+                    <label>Official Work Email</label>
+                    <input type="email" id="regCompEmail" placeholder="recruitment@google.com" required>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Password</label>
+                        <input type="password" id="regCompPass" placeholder="••••••••" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Industry</label>
+                        <input type="text" id="regCompIndustry" placeholder="Technology / Cloud" required>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Location / HQ</label>
+                        <input type="text" id="regCompLocation" placeholder="Mountain View, CA" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Website URL</label>
+                        <input type="url" id="regCompWebsite" placeholder="https://careers.google.com" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Company Description</label>
+                    <textarea id="regCompDesc" rows="2" placeholder="Brief description of your firm..." required></textarea>
+                </div>
+                <button type="submit" class="submit-btn full-btn">Register Company Account</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal 2: Student CV Detail Dossier (Viewable by Companies) -->
+    <div class="modal-overlay" id="cvModal">
+        <div class="modal-card wide-card">
+            <button class="close-modal" onclick="closeCvModal()">✖</button>
+            <div class="modal-header">
+                <h2>🎓 Student CV & Applicant Dossier</h2>
+            </div>
+            <div class="cv-dossier-body" id="cvModalBody">
+                <!-- Rendered dynamically -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notifications -->
+    <div id="toastContainer" class="toast-container"></div>
+
+    <script src="app.js"></script>
+</body>
+</html>

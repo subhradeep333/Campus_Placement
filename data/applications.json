@@ -1,0 +1,16 @@
+[
+  {
+    "id": "APP1001",
+    "jobTitle": "Software Engineer I - Backend",
+    "studentName": "Alex Rivers",
+    "companyName": "Google",
+    "status": "ACCEPTED"
+  },
+  {
+    "id": "APP1002",
+    "jobTitle": "Quantitative Developer Intern",
+    "studentName": "Sarah Chen",
+    "companyName": "Apex Financial Technologies",
+    "status": "PENDING"
+  }
+]

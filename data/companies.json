@@ -1,0 +1,23 @@
+[
+  {
+    "id": "CMP201",
+    "companyName": "Google",
+    "email": "recruitment@google.com",
+    "industry": "Technology / Cloud / AI",
+    "location": "Mountain View, CA"
+  },
+  {
+    "id": "CMP202",
+    "companyName": "Microsoft",
+    "email": "hr@microsoft.com",
+    "industry": "Enterprise Software",
+    "location": "Redmond, WA"
+  },
+  {
+    "id": "CMP203",
+    "companyName": "Apex Financial Technologies",
+    "email": "jobs@fintech.com",
+    "industry": "FinTech / Banking",
+    "location": "New York, NY"
+  }
+]

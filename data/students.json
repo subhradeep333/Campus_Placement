@@ -1,0 +1,29 @@
+[
+  {
+    "id": "STU101",
+    "name": "Alex Rivers",
+    "email": "alex@university.edu",
+    "branch": "Computer Science",
+    "cgpa": 3.85,
+    "skills": "Java, Python, Data Structures, Algorithms, SQL, Git",
+    "hasCvSubmitted": true
+  },
+  {
+    "id": "STU102",
+    "name": "Sarah Chen",
+    "email": "sarah@university.edu",
+    "branch": "Software Engineering",
+    "cgpa": 3.92,
+    "skills": "Java, Spring Boot, React, Cloud Computing, Docker",
+    "hasCvSubmitted": true
+  },
+  {
+    "id": "STU101",
+    "name": "David Miller",
+    "email": "david@university.edu",
+    "branch": "Information Technology",
+    "cgpa": 3.78,
+    "skills": "Not specified",
+    "hasCvSubmitted": false
+  }
+]
