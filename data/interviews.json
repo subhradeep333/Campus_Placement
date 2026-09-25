@@ -1,0 +1,32 @@
+[
+  {
+    "id": "INT101",
+    "jobTitle": "Software Engineer I - Backend",
+    "studentName": "Alex Rivers",
+    "companyName": "Google",
+    "roundType": "Technical Coding Round",
+    "roundNumber": 1,
+    "scheduledDateTime": "2026-10-05 10:00 AM",
+    "status": "PASSED"
+  },
+  {
+    "id": "INT102",
+    "jobTitle": "Software Engineer I - Backend",
+    "studentName": "Alex Rivers",
+    "companyName": "Google",
+    "roundType": "System Design & Architecture",
+    "roundNumber": 2,
+    "scheduledDateTime": "2026-10-12 02:30 PM",
+    "status": "SCHEDULED"
+  },
+  {
+    "id": "INT103",
+    "jobTitle": "Software Engineer I - Backend",
+    "studentName": "Alex Rivers",
+    "companyName": "Google",
+    "roundType": "Technical Coding Round",
+    "roundNumber": 1,
+    "scheduledDateTime": "2026-10-10 10:00 AM",
+    "status": "PASSED"
+  }
+]

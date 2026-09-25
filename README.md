@@ -1,11 +1,12 @@
-# 🚀 Campus Recruitment & Placement Portal (Java + SQLite + HTML/CSS/JS)
+# 🚀 Campus Recruitment & Placement Portal (Pure HTML / CSS / JS)
 
-A full-stack Campus Placement and Job Recruitment Portal built in Java. Features role-based management for **Students** and **Companies**, student CV dossier submissions, job application tracking, candidate selection tools, an embedded **SQLite relational SQL database**, and a modern **Dark Glassmorphism Web Frontend**.
+A clean, modern, single-page **Campus Placement and Job Recruitment Web Application**. Built with pure **HTML5**, **Vanilla CSS3 (Dark Glassmorphism)**, and **JavaScript (LocalStorage Persistence)**. No build tools or backend compilation required! Simply open `index.html` in any web browser.
 
-![Java](https://img.shields.io/badge/Java-26-orange.svg)
-![Database](https://img.shields.io/badge/Database-SQLite3-blue.svg)
-![Frontend](https://img.shields.io/badge/Frontend-HTML5%20%7C%20CSS3%20%7C%20JS-brightgreen.svg)
-![License](https://img.shields.io/badge/License-MIT-green.svg)
+---
+
+## 💻 How to Run
+
+Simply **double-click** or open [`index.html`](file:///Users/apple/euphoriya%20project/index.html) in your favorite web browser (Chrome, Safari, Firefox, Edge).
 
 ---
 
@@ -13,67 +14,27 @@ A full-stack Campus Placement and Job Recruitment Portal built in Java. Features
 
 - **🎓 Student Portal**:
   - Account Registration & Login.
-  - Interactive **CV Dossier Builder** (Skills, experience summary, attached resume file path).
-  - Search & filter available job openings by keyword, technical skills, or company name.
+  - Interactive **CV Dossier Builder** (Skills, experience summary, drag & drop resume file upload).
+  - Search & filter available job openings by title, technical skills, or company name.
   - One-click job applications with automated eligibility validation (Min CGPA cutoff & CV requirement).
   - Real-time **Application Tracker** (`PENDING ⏳`, `SHORTLISTED ⭐`, `ACCEPTED 🎉`, `REJECTED ✖`).
+  - **📅 Scheduled Interviews & Feedback Tracker**: View round details, meeting links, interviewers, and feedback/ratings.
+  - **📜 Printable Digital Placement Offer Letter Certificate**: Instant official offer letter generation.
 
 - **🏢 Company Portal**:
   - Account Registration & Login.
-  - Job Listing Management (Title, description, salary package LPA, min CGPA criteria).
-  - Received Application Management with clickable **Candidate CV Dossier Inspection Modal**.
-  - Candidate status updater (`SHORTLIST`, `ACCEPT`, `REJECT`).
+  - Job Listing Management (Publish new jobs with Title, Package LPA, Min CGPA criteria, skills).
+  - Candidate Application Management with clickable **Candidate CV Dossier Inspection Modal**.
+  - **📅 Interview Scheduler Modal**: Schedule technical coding, HR, managerial, or system design rounds with dates and Google Meet / room links.
+  - **📝 Interview Result & Feedback Manager**: Mark rounds as `PASSED`, `FAILED`, `COMPLETED`, or `CANCELLED` with rating score out of 10 and feedback notes.
 
-- **🌐 Dual Interface Support**:
-  - **Web Frontend (`http://localhost:8080`)**: Built with standard Java `HttpServer` (`com.sun.net.httpserver.HttpServer`), custom JSON REST API endpoints, and a glassmorphism SPA UI.
-  - **Terminal Console (CLI)**: Full menu-driven interactive terminal interface (`ConsoleUI`).
-
-- **🗄️ Relational Database & Persistence**:
-  - **SQLite SQL Database** (`data/placement_portal.db`) via JDBC (`java.sql.PreparedStatement`).
-  - Auto-exported human-readable JSON summary files (`students.json`, `jobs.json`, `companies.json`, `applications.json`).
+- **💾 Browser Persistence (LocalStorage)**:
+  - Automatically pre-seeded with demo accounts and sample job listings.
+  - All registrations, job postings, applications, interview schedules, and feedback persist locally in your browser.
 
 ---
 
-## 📁 Project Structure
-
-```
-.
-├── build.sh                 # Compilation script
-├── run.sh                   # Application launcher (Web Server + CLI)
-├── lib/
-│   ├── sqlite-jdbc.jar      # SQLite JDBC Driver
-│   ├── slf4j-api.jar        # SLF4J Logging Facade
-│   └── slf4j-simple.jar     # SLF4J Logger
-├── src/
-│   ├── Main.java            # Main entry point
-│   ├── model/               # User, Student, Company, JobPosting, Application
-│   ├── service/             # DatabaseService (SQLite JDBC), AuthService, RecruitmentService
-│   ├── ui/                  # ConsoleUI & TerminalUtils
-│   └── web/                 # WebServer REST API & Static File Router
-└── web/
-    ├── index.html           # Single Page Application
-    ├── style.css            # Dark glassmorphism stylesheet
-    └── app.js               # REST API Client & Dashboard logic
-```
-
----
-
-## 🛠️ Quick Start
-
-### 1. Compile the Project
-```bash
-./build.sh
-```
-
-### 2. Launch the Portal
-```bash
-./run.sh
-```
-Open **[http://localhost:8080](http://localhost:8080)** in your browser or use the terminal CLI prompt!
-
----
-
-## 🔑 Quick Demo Login Credentials
+## 🔑 Quick Demo Accounts
 
 | Role | Email | Password |
 |---|---|---|
@@ -82,5 +43,11 @@ Open **[http://localhost:8080](http://localhost:8080)** in your browser or use t
 
 ---
 
-## 📜 License
-This project is open-source under the MIT License.
+## 📁 Simple File Structure
+
+```
+.
+├── index.html       # Single Page Application (Open in browser)
+├── style.css        # Dark glassmorphism stylesheet & responsive layout
+└── app.js           # Interactive UI logic & LocalStorage persistence
+```

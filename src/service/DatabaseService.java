@@ -3,28 +3,81 @@ package service;
 import model.*;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.InputStream;
 import java.sql.*;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Properties;
 
 public class DatabaseService {
+    private static final String CONFIG_FILE = "db.properties";
     private static final String DB_DIR = "data";
-    private static final String DB_URL = "jdbc:sqlite:" + DB_DIR + File.separator + "placement_portal.db";
+    
+    private String dbType = "mysql";
+    private String dbUrl = "jdbc:mysql://localhost:3306/placement_portal?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC";
+    private String dbUser = "root";
+    private String dbPassword = "root";
+    private String driverClass = "com.mysql.cj.jdbc.Driver";
+
+    private String sqliteUrl = "jdbc:sqlite:" + DB_DIR + File.separator + "placement_portal.db";
+    private boolean usingSqliteFallback = false;
 
     public DatabaseService() {
-        try {
-            Class.forName("org.sqlite.JDBC");
-        } catch (ClassNotFoundException e) {
-            System.err.println("[Database Error] SQLite JDBC Driver not found: " + e.getMessage());
-        }
+        loadDatabaseConfig();
+        initDriver();
         ensureDatabaseInitialized();
     }
 
-    private Connection getConnection() throws SQLException {
+    private void loadDatabaseConfig() {
+        Properties props = new Properties();
+        File configFile = new File(CONFIG_FILE);
+        if (configFile.exists()) {
+            try (InputStream input = new FileInputStream(configFile)) {
+                props.load(input);
+                this.dbType = props.getProperty("db.type", "mysql").trim().toLowerCase();
+                this.dbUser = props.getProperty("db.user", "root").trim();
+                this.dbPassword = props.getProperty("db.password", "root").trim();
+
+                if ("mysql".equals(dbType)) {
+                    this.driverClass = props.getProperty("db.mysql.driver", "com.mysql.cj.jdbc.Driver").trim();
+                    this.dbUrl = props.getProperty("db.mysql.url", 
+                        "jdbc:mysql://localhost:3306/placement_portal?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC").trim();
+                } else {
+                    this.driverClass = props.getProperty("db.sqlite.driver", "org.sqlite.JDBC").trim();
+                    this.dbUrl = props.getProperty("db.sqlite.url", sqliteUrl).trim();
+                }
+            } catch (Exception e) {
+                System.err.println("[Database Config] Warning loading db.properties: " + e.getMessage());
+            }
+        }
+    }
+
+    private void initDriver() {
         try {
-            Class.forName("org.sqlite.JDBC");
-        } catch (ClassNotFoundException ignored) {}
-        return DriverManager.getConnection(DB_URL);
+            Class.forName(driverClass);
+        } catch (ClassNotFoundException e) {
+            System.err.println("[Database Driver] Warning: Driver " + driverClass + " not found: " + e.getMessage());
+        }
+    }
+
+    private Connection getConnection() throws SQLException {
+        if (usingSqliteFallback || "sqlite".equals(dbType)) {
+            try {
+                Class.forName("org.sqlite.JDBC");
+            } catch (ClassNotFoundException ignored) {}
+            return DriverManager.getConnection(sqliteUrl);
+        }
+
+        try {
+            Class.forName(driverClass);
+            return DriverManager.getConnection(dbUrl, dbUser, dbPassword);
+        } catch (Exception e) {
+            System.err.println("[Database Alert] Could not connect to MySQL server (" + e.getMessage() + "). Falling back to embedded SQLite database.");
+            this.usingSqliteFallback = true;
+            try {
+                Class.forName("org.sqlite.JDBC");
+            } catch (ClassNotFoundException ignored) {}
+            return DriverManager.getConnection(sqliteUrl);
+        }
     }
 
     private void ensureDatabaseInitialized() {
@@ -34,8 +87,9 @@ public class DatabaseService {
         }
 
         try (Connection conn = getConnection(); Statement stmt = conn.createStatement()) {
-            // Enable Foreign Keys in SQLite
-            stmt.execute("PRAGMA foreign_keys = ON;");
+            if (usingSqliteFallback || "sqlite".equals(dbType)) {
+                stmt.execute("PRAGMA foreign_keys = ON;");
+            }
 
             // Students Table
             stmt.execute("CREATE TABLE IF NOT EXISTS students (" +
@@ -45,11 +99,11 @@ public class DatabaseService {
                     "full_name VARCHAR(100) NOT NULL, " +
                     "phone VARCHAR(30), " +
                     "branch VARCHAR(50), " +
-                    "cgpa REAL, " +
+                    "cgpa DOUBLE, " +
                     "skills TEXT, " +
                     "cv_summary TEXT, " +
                     "cv_file_path TEXT, " +
-                    "has_submitted_cv INTEGER DEFAULT 0" +
+                    "has_submitted_cv INT DEFAULT 0" +
                     ");");
 
             // Companies Table
@@ -72,11 +126,10 @@ public class DatabaseService {
                     "title VARCHAR(150) NOT NULL, " +
                     "description TEXT, " +
                     "required_skills TEXT, " +
-                    "package_lpa REAL, " +
-                    "min_cgpa REAL, " +
+                    "package_lpa DOUBLE, " +
+                    "min_cgpa DOUBLE, " +
                     "posted_date VARCHAR(50), " +
-                    "is_active INTEGER DEFAULT 1, " +
-                    "FOREIGN KEY (company_id) REFERENCES companies(id)" +
+                    "is_active INT DEFAULT 1" +
                     ");");
 
             // Applications Table
@@ -87,16 +140,34 @@ public class DatabaseService {
                     "student_id VARCHAR(50) NOT NULL, " +
                     "student_name VARCHAR(100) NOT NULL, " +
                     "student_branch VARCHAR(50), " +
-                    "student_cgpa REAL, " +
+                    "student_cgpa DOUBLE, " +
                     "company_id VARCHAR(50) NOT NULL, " +
                     "company_name VARCHAR(100) NOT NULL, " +
                     "status VARCHAR(30) NOT NULL, " +
-                    "applied_date VARCHAR(50), " +
-                    "FOREIGN KEY (job_id) REFERENCES job_postings(id), " +
-                    "FOREIGN KEY (student_id) REFERENCES students(id), " +
-                    "FOREIGN KEY (company_id) REFERENCES companies(id)" +
+                    "applied_date VARCHAR(50)" +
                     ");");
 
+            // Interviews Table
+            stmt.execute("CREATE TABLE IF NOT EXISTS interviews (" +
+                    "id VARCHAR(50) PRIMARY KEY, " +
+                    "application_id VARCHAR(50) NOT NULL, " +
+                    "job_id VARCHAR(50) NOT NULL, " +
+                    "job_title VARCHAR(150) NOT NULL, " +
+                    "student_id VARCHAR(50) NOT NULL, " +
+                    "student_name VARCHAR(100) NOT NULL, " +
+                    "company_id VARCHAR(50) NOT NULL, " +
+                    "company_name VARCHAR(100) NOT NULL, " +
+                    "round_type VARCHAR(100) NOT NULL, " +
+                    "round_number INT NOT NULL, " +
+                    "scheduled_datetime VARCHAR(50) NOT NULL, " +
+                    "location_or_link TEXT, " +
+                    "interviewer_name VARCHAR(100), " +
+                    "status VARCHAR(30) NOT NULL, " +
+                    "feedback TEXT, " +
+                    "score DOUBLE DEFAULT 0.0" +
+                    ");");
+
+            System.out.println("✅ Database Engine Initialized! Mode: " + (usingSqliteFallback ? "SQLite (Fallback)" : dbType.toUpperCase()));
         } catch (SQLException e) {
             System.err.println("[Database Error] Initialization failed: " + e.getMessage());
         }
@@ -181,6 +252,31 @@ public class DatabaseService {
                     dataStore.addApplication(a);
                 }
             }
+
+            // Load Interviews
+            try (Statement stmt = conn.createStatement(); ResultSet rs = stmt.executeQuery("SELECT * FROM interviews")) {
+                while (rs.next()) {
+                    InterviewRound ir = new InterviewRound(
+                            rs.getString("id"),
+                            rs.getString("application_id"),
+                            rs.getString("job_id"),
+                            rs.getString("job_title"),
+                            rs.getString("student_id"),
+                            rs.getString("student_name"),
+                            rs.getString("company_id"),
+                            rs.getString("company_name"),
+                            rs.getString("round_type"),
+                            rs.getInt("round_number"),
+                            rs.getString("scheduled_datetime"),
+                            rs.getString("location_or_link"),
+                            rs.getString("interviewer_name")
+                    );
+                    ir.setStatus(InterviewStatus.valueOf(rs.getString("status")));
+                    ir.setFeedback(rs.getString("feedback"));
+                    ir.setScore(rs.getDouble("score"));
+                    dataStore.addInterview(ir);
+                }
+            }
         } catch (SQLException e) {
             System.err.println("[Database Error] Error loading data from SQL DB: " + e.getMessage());
         }
@@ -193,7 +289,7 @@ public class DatabaseService {
             conn.setAutoCommit(false);
 
             // Sync Students
-            String upsertStudentSql = "INSERT OR REPLACE INTO students " +
+            String upsertStudentSql = "REPLACE INTO students " +
                     "(id, email, password, full_name, phone, branch, cgpa, skills, cv_summary, cv_file_path, has_submitted_cv) " +
                     "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);";
             try (PreparedStatement pstmt = conn.prepareStatement(upsertStudentSql)) {
@@ -215,7 +311,7 @@ public class DatabaseService {
             }
 
             // Sync Companies
-            String upsertCompanySql = "INSERT OR REPLACE INTO companies " +
+            String upsertCompanySql = "REPLACE INTO companies " +
                     "(id, email, password, company_name, industry, location, website, description) " +
                     "VALUES (?, ?, ?, ?, ?, ?, ?, ?);";
             try (PreparedStatement pstmt = conn.prepareStatement(upsertCompanySql)) {
@@ -234,7 +330,7 @@ public class DatabaseService {
             }
 
             // Sync Job Postings
-            String upsertJobSql = "INSERT OR REPLACE INTO job_postings " +
+            String upsertJobSql = "REPLACE INTO job_postings " +
                     "(id, company_id, company_name, title, description, required_skills, package_lpa, min_cgpa, posted_date, is_active) " +
                     "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);";
             try (PreparedStatement pstmt = conn.prepareStatement(upsertJobSql)) {
@@ -255,7 +351,7 @@ public class DatabaseService {
             }
 
             // Sync Applications
-            String upsertAppSql = "INSERT OR REPLACE INTO applications " +
+            String upsertAppSql = "REPLACE INTO applications " +
                     "(id, job_id, job_title, student_id, student_name, student_branch, student_cgpa, company_id, company_name, status, applied_date) " +
                     "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);";
             try (PreparedStatement pstmt = conn.prepareStatement(upsertAppSql)) {
@@ -271,6 +367,33 @@ public class DatabaseService {
                     pstmt.setString(9, a.getCompanyName());
                     pstmt.setString(10, a.getStatus().name());
                     pstmt.setString(11, a.getAppliedDate());
+                    pstmt.addBatch();
+                }
+                pstmt.executeBatch();
+            }
+
+            // Sync Interviews
+            String upsertInterviewSql = "REPLACE INTO interviews " +
+                    "(id, application_id, job_id, job_title, student_id, student_name, company_id, company_name, round_type, round_number, scheduled_datetime, location_or_link, interviewer_name, status, feedback, score) " +
+                    "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);";
+            try (PreparedStatement pstmt = conn.prepareStatement(upsertInterviewSql)) {
+                for (InterviewRound i : dataStore.getInterviews()) {
+                    pstmt.setString(1, i.getId());
+                    pstmt.setString(2, i.getApplicationId());
+                    pstmt.setString(3, i.getJobId());
+                    pstmt.setString(4, i.getJobTitle());
+                    pstmt.setString(5, i.getStudentId());
+                    pstmt.setString(6, i.getStudentName());
+                    pstmt.setString(7, i.getCompanyId());
+                    pstmt.setString(8, i.getCompanyName());
+                    pstmt.setString(9, i.getRoundType());
+                    pstmt.setInt(10, i.getRoundNumber());
+                    pstmt.setString(11, i.getScheduledDateTime());
+                    pstmt.setString(12, i.getLocationOrLink());
+                    pstmt.setString(13, i.getInterviewerName());
+                    pstmt.setString(14, i.getStatus().name());
+                    pstmt.setString(15, i.getFeedback());
+                    pstmt.setDouble(16, i.getScore());
                     pstmt.addBatch();
                 }
                 pstmt.executeBatch();

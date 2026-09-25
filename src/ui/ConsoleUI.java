@@ -178,9 +178,10 @@ public class ConsoleUI {
             System.out.println("  4. 🔍 Search / Filter Job Openings");
             System.out.println("  5. 📝 Apply for a Job Opening");
             System.out.println("  6. 📊 Track My Job Application Statuses");
+            System.out.println("  7. 📅 View My Scheduled Interviews & Feedback");
             System.out.println("  0. 🚪 Logout");
             TerminalUtils.printDivider();
-            System.out.print(TerminalUtils.CYAN + "Enter option [0-6]: " + TerminalUtils.RESET);
+            System.out.print(TerminalUtils.CYAN + "Enter option [0-7]: " + TerminalUtils.RESET);
 
             String option = scanner.nextLine().trim();
             switch (option) {
@@ -201,6 +202,9 @@ public class ConsoleUI {
                     break;
                 case "6":
                     trackStudentApplications(student);
+                    break;
+                case "7":
+                    trackStudentInterviews(student);
                     break;
                 case "0":
                     authService.logout();
@@ -358,10 +362,12 @@ public class ConsoleUI {
             System.out.println("  2. 📋 View My Posted Job Openings");
             System.out.println("  3. 👥 View Applicants & Review Student CVs");
             System.out.println("  4. ⚙️  Update Applicant Status (Shortlist / Accept / Reject)");
-            System.out.println("  5. ℹ️  View Company Profile Details");
+            System.out.println("  5. 📅 Schedule Interview Round for Candidate");
+            System.out.println("  6. 📝 Update Interview Result & Submit Feedback");
+            System.out.println("  7. ℹ️  View Company Profile Details");
             System.out.println("  0. 🚪 Logout");
             TerminalUtils.printDivider();
-            System.out.print(TerminalUtils.CYAN + "Enter option [0-5]: " + TerminalUtils.RESET);
+            System.out.print(TerminalUtils.CYAN + "Enter option [0-7]: " + TerminalUtils.RESET);
 
             String option = scanner.nextLine().trim();
             switch (option) {
@@ -378,6 +384,12 @@ public class ConsoleUI {
                     handleUpdateApplicationStatus(company);
                     break;
                 case "5":
+                    handleScheduleInterview(company);
+                    break;
+                case "6":
+                    handleUpdateInterviewFeedback(company);
+                    break;
+                case "7":
                     viewCompanyProfile(company);
                     break;
                 case "0":
@@ -542,6 +554,141 @@ public class ConsoleUI {
             TerminalUtils.printSuccess("Application status updated to " + newStatus + "!");
         } else {
             TerminalUtils.printError("Failed to update status.");
+        }
+        promptEnterKey();
+    }
+
+    private void trackStudentInterviews(Student student) {
+        TerminalUtils.printSubHeader("MY SCHEDULED INTERVIEWS & ROUNDS");
+        List<InterviewRound> list = recruitmentService.getInterviewsForStudent(student.getId());
+        if (list.isEmpty()) {
+            TerminalUtils.printInfo("No interview rounds scheduled yet.");
+        } else {
+            System.out.printf("%-10s %-22s %-20s %-18s %-20s %-12s%n", "Int ID", "Round Type", "Company", "Date & Time", "Interviewer / Location", "Status");
+            TerminalUtils.printDivider();
+            for (InterviewRound ir : list) {
+                System.out.printf("%-10s %-22s %-20s %-18s %-20s %s%n",
+                        ir.getId(), "Round #" + ir.getRoundNumber() + " (" + ir.getRoundType() + ")",
+                        ir.getCompanyName(), ir.getScheduledDateTime(), ir.getInterviewerName(), ir.getStatus());
+                if (ir.getFeedback() != null && !ir.getFeedback().isEmpty()) {
+                    System.out.println("   └─ Feedback: " + ir.getFeedback() + (ir.getScore() > 0 ? " | Score: " + ir.getScore() + "/10" : ""));
+                }
+                if (ir.getLocationOrLink() != null && !ir.getLocationOrLink().isEmpty()) {
+                    System.out.println("   └─ Meeting Link / Location: " + ir.getLocationOrLink());
+                }
+            }
+        }
+        promptEnterKey();
+    }
+
+    private void handleScheduleInterview(Company company) {
+        TerminalUtils.printSubHeader("SCHEDULE INTERVIEW ROUND FOR CANDIDATE");
+        List<Application> apps = recruitmentService.getApplicationsForCompany(company.getId());
+        if (apps.isEmpty()) {
+            TerminalUtils.printInfo("No candidate applications received yet.");
+            promptEnterKey();
+            return;
+        }
+
+        System.out.println("Candidate Applications:");
+        for (Application a : apps) {
+            System.out.printf("  [%s] Candidate: %s (%s, CGPA: %.2f) | Job: %s | Status: %s%n",
+                    a.getId(), a.getStudentName(), a.getStudentBranch(), a.getStudentCgpa(),
+                    a.getJobTitle(), TerminalUtils.getStatusBadge(a.getStatus()));
+        }
+
+        System.out.print("\nEnter Application ID to schedule interview for (e.g. APP1001): ");
+        String appId = scanner.nextLine().trim();
+
+        Optional<Application> appOpt = apps.stream().filter(a -> a.getId().equalsIgnoreCase(appId)).findFirst();
+        if (appOpt.isEmpty()) {
+            TerminalUtils.printError("Application ID not found!");
+            promptEnterKey();
+            return;
+        }
+
+        System.out.print("Enter Round Type (e.g. Technical Round 1, HR Interview, System Design): ");
+        String roundType = scanner.nextLine().trim();
+
+        System.out.print("Enter Round Number (1, 2, 3...): ");
+        int roundNum = 1;
+        try { roundNum = Integer.parseInt(scanner.nextLine().trim()); } catch (Exception ignored) {}
+
+        System.out.print("Enter Scheduled Date & Time (e.g. 2026-10-10 11:00 AM): ");
+        String dateTime = scanner.nextLine().trim();
+
+        System.out.print("Enter Meeting Link or Room Location (e.g. https://meet.google.com/abc-xyz or Room 402): ");
+        String link = scanner.nextLine().trim();
+
+        System.out.print("Enter Interviewer Name(s): ");
+        String interviewer = scanner.nextLine().trim();
+
+        String result = recruitmentService.scheduleInterview(company.getId(), appId, roundType, roundNum, dateTime, link, interviewer);
+        if (result.startsWith("SUCCESS")) {
+            TerminalUtils.printSuccess(result);
+        } else {
+            TerminalUtils.printError(result);
+        }
+        promptEnterKey();
+    }
+
+    private void handleUpdateInterviewFeedback(Company company) {
+        TerminalUtils.printSubHeader("UPDATE INTERVIEW RESULT & FEEDBACK");
+        List<InterviewRound> interviews = recruitmentService.getInterviewsForCompany(company.getId());
+        if (interviews.isEmpty()) {
+            TerminalUtils.printInfo("No interview rounds scheduled yet.");
+            promptEnterKey();
+            return;
+        }
+
+        System.out.println("Scheduled Interviews:");
+        for (InterviewRound ir : interviews) {
+            System.out.printf("  [%s] Candidate: %s | Round #%d (%s) | Status: %s%n",
+                    ir.getId(), ir.getStudentName(), ir.getRoundNumber(), ir.getRoundType(), ir.getStatus());
+        }
+
+        System.out.print("\nEnter Interview ID to update (e.g. INT101): ");
+        String intId = scanner.nextLine().trim();
+
+        Optional<InterviewRound> intOpt = interviews.stream().filter(i -> i.getId().equalsIgnoreCase(intId)).findFirst();
+        if (intOpt.isEmpty()) {
+            TerminalUtils.printError("Interview ID not found!");
+            promptEnterKey();
+            return;
+        }
+
+        System.out.println("\nSelect New Outcome / Status:");
+        System.out.println("  1. PASSED (Cleared Round)");
+        System.out.println("  2. FAILED (Rejected in Round)");
+        System.out.println("  3. COMPLETED (Feedback logged)");
+        System.out.println("  4. CANCELLED");
+        System.out.print("Choice [1-4]: ");
+        String choice = scanner.nextLine().trim();
+
+        InterviewStatus status;
+        switch (choice) {
+            case "1": status = InterviewStatus.PASSED; break;
+            case "2": status = InterviewStatus.FAILED; break;
+            case "3": status = InterviewStatus.COMPLETED; break;
+            case "4": status = InterviewStatus.CANCELLED; break;
+            default:
+                TerminalUtils.printError("Invalid status choice!");
+                promptEnterKey();
+                return;
+        }
+
+        System.out.print("Enter Interviewer Feedback / Notes: ");
+        String feedback = scanner.nextLine().trim();
+
+        System.out.print("Enter Score / Rating out of 10 (e.g. 8.5, or 0 to skip): ");
+        double score = 0.0;
+        try { score = Double.parseDouble(scanner.nextLine().trim()); } catch (Exception ignored) {}
+
+        boolean ok = recruitmentService.updateInterviewResult(intId, status, feedback, score);
+        if (ok) {
+            TerminalUtils.printSuccess("Interview result & feedback recorded successfully!");
+        } else {
+            TerminalUtils.printError("Failed to update interview.");
         }
         promptEnterKey();
     }

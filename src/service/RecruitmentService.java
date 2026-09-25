@@ -120,8 +120,112 @@ public class RecruitmentService {
         return dataStore.getCompanies();
     }
 
+    // Interview Management Services
+    public String scheduleInterview(String companyId, String applicationId, String roundType, int roundNumber,
+                                    String scheduledDateTime, String locationOrLink, String interviewerName) {
+        Optional<Application> appOpt = dataStore.findApplicationById(applicationId);
+        if (appOpt.isEmpty()) {
+            return "ERROR: Application not found!";
+        }
+
+        Application app = appOpt.get();
+        if (!app.getCompanyId().equalsIgnoreCase(companyId)) {
+            return "ERROR: Unauthorized! This application does not belong to your company.";
+        }
+
+        String intId = dataStore.generateInterviewId();
+        InterviewRound interview = new InterviewRound(
+                intId,
+                app.getId(),
+                app.getJobId(),
+                app.getJobTitle(),
+                app.getStudentId(),
+                app.getStudentName(),
+                app.getCompanyId(),
+                app.getCompanyName(),
+                roundType,
+                roundNumber,
+                scheduledDateTime,
+                locationOrLink,
+                interviewerName
+        );
+
+        dataStore.addInterview(interview);
+
+        // Auto-update application status to SHORTLISTED if currently PENDING
+        if (app.getStatus() == ApplicationStatus.PENDING) {
+            app.setStatus(ApplicationStatus.SHORTLISTED);
+        }
+
+        PersistenceService.saveDataStore(dataStore);
+        return "SUCCESS: Interview round #" + roundNumber + " (" + roundType + ") scheduled successfully! Interview ID: " + intId;
+    }
+
+    public boolean updateInterviewResult(String interviewId, InterviewStatus status, String feedback, double score) {
+        Optional<InterviewRound> intOpt = dataStore.findInterviewById(interviewId);
+        if (intOpt.isPresent()) {
+            InterviewRound ir = intOpt.get();
+            ir.setStatus(status);
+            if (feedback != null) ir.setFeedback(feedback);
+            if (score >= 0) ir.setScore(score);
+            PersistenceService.saveDataStore(dataStore);
+            return true;
+        }
+        return false;
+    }
+
+    public boolean cancelInterview(String interviewId) {
+        Optional<InterviewRound> intOpt = dataStore.findInterviewById(interviewId);
+        if (intOpt.isPresent()) {
+            intOpt.get().setStatus(InterviewStatus.CANCELLED);
+            PersistenceService.saveDataStore(dataStore);
+            return true;
+        }
+        return false;
+    }
+
+    public List<InterviewRound> getInterviewsForStudent(String studentId) {
+        return dataStore.getInterviewsByStudentId(studentId);
+    }
+
+    public List<InterviewRound> getInterviewsForCompany(String companyId) {
+        return dataStore.getInterviewsByCompanyId(companyId);
+    }
+
+    public List<InterviewRound> getInterviewsForApplication(String applicationId) {
+        return dataStore.getInterviewsByApplicationId(applicationId);
+    }
+
+    public Optional<InterviewRound> getInterviewDetails(String interviewId) {
+        return dataStore.findInterviewById(interviewId);
+    }
+
     // Seed Demo Data
     public void seedDemoData() {
+        if (!dataStore.getApplications().isEmpty() && dataStore.getInterviews().isEmpty()) {
+            Application a1 = dataStore.getApplications().get(0);
+            String int1Id = dataStore.generateInterviewId();
+            InterviewRound ir1 = new InterviewRound(
+                    int1Id, a1.getId(), a1.getJobId(), a1.getJobTitle(), a1.getStudentId(), a1.getStudentName(), a1.getCompanyId(), a1.getCompanyName(),
+                    "Technical Coding Round", 1, "2026-10-05 10:00 AM", "https://meet.google.com/xyz-tech-round", "Dr. Alan Turing"
+            );
+            ir1.setStatus(InterviewStatus.PASSED);
+            ir1.setFeedback("Excellent knowledge of Java concurrency, memory models, and data structure design. Strong problem-solving speed.");
+            ir1.setScore(9.2);
+            dataStore.addInterview(ir1);
+
+            String int2Id = dataStore.generateInterviewId();
+            InterviewRound ir2 = new InterviewRound(
+                    int2Id, a1.getId(), a1.getJobId(), a1.getJobTitle(), a1.getStudentId(), a1.getStudentName(), a1.getCompanyId(), a1.getCompanyName(),
+                    "System Design & Architecture", 2, "2026-10-12 02:30 PM", "https://meet.google.com/xyz-system-design", "Grace Hopper"
+            );
+            ir2.setStatus(InterviewStatus.SCHEDULED);
+            ir2.setFeedback("Upcoming Round. Candidate instructed to review distributed consensus algorithms.");
+            dataStore.addInterview(ir2);
+
+            PersistenceService.saveDataStore(dataStore);
+        }
+
         if (!dataStore.getCompanies().isEmpty() || !dataStore.getStudents().isEmpty()) {
             return; // Data already exists
         }
@@ -179,6 +283,26 @@ public class RecruitmentService {
         Application a2 = new Application(a2Id, j3Id, j3.getTitle(), s2Id, s2.getFullName(), s2.getBranch(), s2.getCgpa(), c3Id, c3.getCompanyName());
         a2.setStatus(ApplicationStatus.PENDING);
         dataStore.addApplication(a2);
+
+        // Add Demo Interviews
+        String int1Id = dataStore.generateInterviewId();
+        InterviewRound ir1 = new InterviewRound(
+                int1Id, a1Id, j1Id, j1.getTitle(), s1Id, s1.getFullName(), c1Id, c1.getCompanyName(),
+                "Technical Coding Round", 1, "2026-10-05 10:00 AM", "https://meet.google.com/xyz-tech-round", "Dr. Alan Turing"
+        );
+        ir1.setStatus(InterviewStatus.PASSED);
+        ir1.setFeedback("Excellent knowledge of Java concurrency, memory models, and data structure design. Strong problem-solving speed.");
+        ir1.setScore(9.2);
+        dataStore.addInterview(ir1);
+
+        String int2Id = dataStore.generateInterviewId();
+        InterviewRound ir2 = new InterviewRound(
+                int2Id, a1Id, j1Id, j1.getTitle(), s1Id, s1.getFullName(), c1Id, c1.getCompanyName(),
+                "System Design & Architecture", 2, "2026-10-12 02:30 PM", "https://meet.google.com/xyz-system-design", "Grace Hopper"
+        );
+        ir2.setStatus(InterviewStatus.SCHEDULED);
+        ir2.setFeedback("Upcoming Round. Candidate instructed to review distributed consensus algorithms.");
+        dataStore.addInterview(ir2);
 
         PersistenceService.saveDataStore(dataStore);
     }

@@ -124,6 +124,25 @@ public class PersistenceService {
             sbApps.append("]");
             Files.writeString(Paths.get(DATA_DIR, "applications.json"), sbApps.toString());
 
+            // Interviews JSON
+            StringBuilder sbInterviews = new StringBuilder("[\n");
+            List<InterviewRound> interviews = dataStore.getInterviews();
+            for (int i = 0; i < interviews.size(); i++) {
+                InterviewRound ir = interviews.get(i);
+                sbInterviews.append("  {\n")
+                        .append("    \"id\": \"").append(ir.getId()).append("\",\n")
+                        .append("    \"jobTitle\": \"").append(escapeJson(ir.getJobTitle())).append("\",\n")
+                        .append("    \"studentName\": \"").append(escapeJson(ir.getStudentName())).append("\",\n")
+                        .append("    \"companyName\": \"").append(escapeJson(ir.getCompanyName())).append("\",\n")
+                        .append("    \"roundType\": \"").append(escapeJson(ir.getRoundType())).append("\",\n")
+                        .append("    \"roundNumber\": ").append(ir.getRoundNumber()).append(",\n")
+                        .append("    \"scheduledDateTime\": \"").append(escapeJson(ir.getScheduledDateTime())).append("\",\n")
+                        .append("    \"status\": \"").append(ir.getStatus()).append("\"\n")
+                        .append("  }").append(i < interviews.size() - 1 ? "," : "").append("\n");
+            }
+            sbInterviews.append("]");
+            Files.writeString(Paths.get(DATA_DIR, "interviews.json"), sbInterviews.toString());
+
         } catch (Exception ignored) {}
     }
 

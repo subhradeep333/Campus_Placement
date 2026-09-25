@@ -14,22 +14,26 @@ public class DataStore implements Serializable {
     private List<Company> companies;
     private List<JobPosting> jobPostings;
     private List<Application> applications;
+    private List<InterviewRound> interviews;
 
     private AtomicInteger studentCounter;
     private AtomicInteger companyCounter;
     private AtomicInteger jobCounter;
     private AtomicInteger applicationCounter;
+    private AtomicInteger interviewCounter;
 
     public DataStore() {
         this.students = new ArrayList<>();
         this.companies = new ArrayList<>();
         this.jobPostings = new ArrayList<>();
         this.applications = new ArrayList<>();
+        this.interviews = new ArrayList<>();
 
         this.studentCounter = new AtomicInteger(100);
         this.companyCounter = new AtomicInteger(200);
         this.jobCounter = new AtomicInteger(500);
         this.applicationCounter = new AtomicInteger(1000);
+        this.interviewCounter = new AtomicInteger(100);
     }
 
     public String generateStudentId() {
@@ -46,6 +50,10 @@ public class DataStore implements Serializable {
 
     public String generateApplicationId() {
         return "APP" + applicationCounter.incrementAndGet();
+    }
+
+    public String generateInterviewId() {
+        return "INT" + interviewCounter.incrementAndGet();
     }
 
     // Students
@@ -197,6 +205,61 @@ public class DataStore implements Serializable {
     public Optional<Application> findApplicationById(String appId) {
         return applications.stream()
                 .filter(a -> a.getId().equalsIgnoreCase(appId.trim()))
+                .findFirst();
+    }
+
+    // Interviews
+    public void addInterview(InterviewRound interview) {
+        if (interviews == null) {
+            interviews = new ArrayList<>();
+        }
+        interviews.add(interview);
+        if (interview != null && interview.getId() != null && interview.getId().startsWith("INT")) {
+            try {
+                int num = Integer.parseInt(interview.getId().substring(3));
+                interviewCounter.updateAndGet(curr -> Math.max(curr, num));
+            } catch (NumberFormatException ignored) {}
+        }
+    }
+
+    public List<InterviewRound> getInterviews() {
+        if (interviews == null) interviews = new ArrayList<>();
+        return interviews;
+    }
+
+    public List<InterviewRound> getInterviewsByApplicationId(String applicationId) {
+        List<InterviewRound> result = new ArrayList<>();
+        for (InterviewRound i : getInterviews()) {
+            if (i.getApplicationId().equalsIgnoreCase(applicationId)) {
+                result.add(i);
+            }
+        }
+        return result;
+    }
+
+    public List<InterviewRound> getInterviewsByStudentId(String studentId) {
+        List<InterviewRound> result = new ArrayList<>();
+        for (InterviewRound i : getInterviews()) {
+            if (i.getStudentId().equalsIgnoreCase(studentId)) {
+                result.add(i);
+            }
+        }
+        return result;
+    }
+
+    public List<InterviewRound> getInterviewsByCompanyId(String companyId) {
+        List<InterviewRound> result = new ArrayList<>();
+        for (InterviewRound i : getInterviews()) {
+            if (i.getCompanyId().equalsIgnoreCase(companyId)) {
+                result.add(i);
+            }
+        }
+        return result;
+    }
+
+    public Optional<InterviewRound> findInterviewById(String interviewId) {
+        return getInterviews().stream()
+                .filter(i -> i.getId().equalsIgnoreCase(interviewId.trim()))
                 .findFirst();
     }
 }

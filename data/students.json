@@ -25,5 +25,14 @@
     "cgpa": 3.78,
     "skills": "Not specified",
     "hasCvSubmitted": false
+  },
+  {
+    "id": "STU104",
+    "name": "SUBRADEEP ROY CHOWDHURY",
+    "email": "subhradeeproychowdhurycode3@gmail.com",
+    "branch": "computer",
+    "cgpa": 9.88,
+    "skills": "java",
+    "hasCvSubmitted": true
   }
 ]

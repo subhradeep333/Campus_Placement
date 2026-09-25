@@ -46,6 +46,12 @@ public class WebServer {
             server.createContext("/api/applications/status", new ApplicationStatusHandler());
             server.createContext("/api/companies", new CompaniesHandler());
 
+            // Interview Handlers
+            server.createContext("/api/interviews", new InterviewsHandler());
+            server.createContext("/api/interviews/schedule", new ScheduleInterviewHandler());
+            server.createContext("/api/interviews/feedback", new InterviewFeedbackHandler());
+            server.createContext("/api/interviews/cancel", new CancelInterviewHandler());
+
             server.setExecutor(java.util.concurrent.Executors.newCachedThreadPool());
             server.start();
             System.out.println("🌐 Web Server started! Access UI at: \u001B[36mhttp://localhost:" + port + "\u001B[0m");
@@ -442,6 +448,155 @@ public class WebServer {
             }
             sb.append("]");
             sendResponse(exchange, 200, "application/json", sb.toString());
+        }
+    }
+
+    private class InterviewsHandler implements HttpHandler {
+        @Override
+        public void handle(HttpExchange exchange) throws IOException {
+            addCorsHeaders(exchange);
+            if ("OPTIONS".equalsIgnoreCase(exchange.getRequestMethod())) {
+                exchange.sendResponseHeaders(204, -1);
+                return;
+            }
+
+            String query = exchange.getRequestURI().getQuery();
+            List<InterviewRound> list;
+            if (query != null && query.contains("studentId=")) {
+                String sid = query.split("studentId=")[1].split("&")[0];
+                list = recruitmentService.getInterviewsForStudent(sid);
+            } else if (query != null && query.contains("companyId=")) {
+                String cid = query.split("companyId=")[1].split("&")[0];
+                list = recruitmentService.getInterviewsForCompany(cid);
+            } else if (query != null && query.contains("applicationId=")) {
+                String aid = query.split("applicationId=")[1].split("&")[0];
+                list = recruitmentService.getInterviewsForApplication(aid);
+            } else {
+                list = List.of();
+            }
+
+            StringBuilder sb = new StringBuilder("[");
+            for (int i = 0; i < list.size(); i++) {
+                InterviewRound ir = list.get(i);
+                sb.append("{")
+                        .append("\"id\":\"").append(ir.getId()).append("\",")
+                        .append("\"applicationId\":\"").append(ir.getApplicationId()).append("\",")
+                        .append("\"jobId\":\"").append(ir.getJobId()).append("\",")
+                        .append("\"jobTitle\":\"").append(escapeJson(ir.getJobTitle())).append("\",")
+                        .append("\"studentId\":\"").append(ir.getStudentId()).append("\",")
+                        .append("\"studentName\":\"").append(escapeJson(ir.getStudentName())).append("\",")
+                        .append("\"companyId\":\"").append(ir.getCompanyId()).append("\",")
+                        .append("\"companyName\":\"").append(escapeJson(ir.getCompanyName())).append("\",")
+                        .append("\"roundType\":\"").append(escapeJson(ir.getRoundType())).append("\",")
+                        .append("\"roundNumber\":").append(ir.getRoundNumber()).append(",")
+                        .append("\"scheduledDateTime\":\"").append(escapeJson(ir.getScheduledDateTime())).append("\",")
+                        .append("\"locationOrLink\":\"").append(escapeJson(ir.getLocationOrLink())).append("\",")
+                        .append("\"interviewerName\":\"").append(escapeJson(ir.getInterviewerName())).append("\",")
+                        .append("\"status\":\"").append(ir.getStatus()).append("\",")
+                        .append("\"feedback\":\"").append(escapeJson(ir.getFeedback())).append("\",")
+                        .append("\"score\":").append(ir.getScore())
+                        .append("}").append(i < list.size() - 1 ? "," : "");
+            }
+            sb.append("]");
+            sendResponse(exchange, 200, "application/json", sb.toString());
+        }
+    }
+
+    private class ScheduleInterviewHandler implements HttpHandler {
+        @Override
+        public void handle(HttpExchange exchange) throws IOException {
+            addCorsHeaders(exchange);
+            if ("OPTIONS".equalsIgnoreCase(exchange.getRequestMethod())) {
+                exchange.sendResponseHeaders(204, -1);
+                return;
+            }
+            if (!"POST".equalsIgnoreCase(exchange.getRequestMethod())) {
+                sendResponse(exchange, 405, "application/json", "{\"error\":\"Method not allowed\"}");
+                return;
+            }
+
+            try {
+                Map<String, String> json = parseSimpleJson(readRequestBody(exchange));
+                String companyId = json.get("companyId");
+                String applicationId = json.get("applicationId");
+                String roundType = json.get("roundType");
+                int roundNumber = Integer.parseInt(json.getOrDefault("roundNumber", "1"));
+                String scheduledDateTime = json.get("scheduledDateTime");
+                String locationOrLink = json.getOrDefault("locationOrLink", "");
+                String interviewerName = json.getOrDefault("interviewerName", "");
+
+                String res = recruitmentService.scheduleInterview(companyId, applicationId, roundType, roundNumber, scheduledDateTime, locationOrLink, interviewerName);
+                if (res.startsWith("SUCCESS")) {
+                    sendResponse(exchange, 200, "application/json", "{\"success\":true, \"message\":\"" + escapeJson(res) + "\"}");
+                } else {
+                    sendResponse(exchange, 400, "application/json", "{\"error\":\"" + escapeJson(res) + "\"}");
+                }
+            } catch (Exception e) {
+                sendResponse(exchange, 500, "application/json", "{\"error\":\"" + escapeJson(e.getMessage()) + "\"}");
+            }
+        }
+    }
+
+    private class InterviewFeedbackHandler implements HttpHandler {
+        @Override
+        public void handle(HttpExchange exchange) throws IOException {
+            addCorsHeaders(exchange);
+            if ("OPTIONS".equalsIgnoreCase(exchange.getRequestMethod())) {
+                exchange.sendResponseHeaders(204, -1);
+                return;
+            }
+            if (!"POST".equalsIgnoreCase(exchange.getRequestMethod())) {
+                sendResponse(exchange, 405, "application/json", "{\"error\":\"Method not allowed\"}");
+                return;
+            }
+
+            try {
+                Map<String, String> json = parseSimpleJson(readRequestBody(exchange));
+                String interviewId = json.get("interviewId");
+                InterviewStatus status = InterviewStatus.valueOf(json.get("status").toUpperCase());
+                String feedback = json.getOrDefault("feedback", "");
+                double score = 0.0;
+                if (json.containsKey("score") && !json.get("score").isEmpty()) {
+                    score = Double.parseDouble(json.get("score"));
+                }
+
+                boolean ok = recruitmentService.updateInterviewResult(interviewId, status, feedback, score);
+                if (ok) {
+                    sendResponse(exchange, 200, "application/json", "{\"success\":true, \"message\":\"Interview feedback & status updated successfully\"}");
+                } else {
+                    sendResponse(exchange, 400, "application/json", "{\"error\":\"Interview round not found\"}");
+                }
+            } catch (Exception e) {
+                sendResponse(exchange, 500, "application/json", "{\"error\":\"" + escapeJson(e.getMessage()) + "\"}");
+            }
+        }
+    }
+
+    private class CancelInterviewHandler implements HttpHandler {
+        @Override
+        public void handle(HttpExchange exchange) throws IOException {
+            addCorsHeaders(exchange);
+            if ("OPTIONS".equalsIgnoreCase(exchange.getRequestMethod())) {
+                exchange.sendResponseHeaders(204, -1);
+                return;
+            }
+            if (!"POST".equalsIgnoreCase(exchange.getRequestMethod())) {
+                sendResponse(exchange, 405, "application/json", "{\"error\":\"Method not allowed\"}");
+                return;
+            }
+
+            try {
+                Map<String, String> json = parseSimpleJson(readRequestBody(exchange));
+                String interviewId = json.get("interviewId");
+                boolean ok = recruitmentService.cancelInterview(interviewId);
+                if (ok) {
+                    sendResponse(exchange, 200, "application/json", "{\"success\":true, \"message\":\"Interview cancelled successfully\"}");
+                } else {
+                    sendResponse(exchange, 400, "application/json", "{\"error\":\"Interview not found\"}");
+                }
+            } catch (Exception e) {
+                sendResponse(exchange, 500, "application/json", "{\"error\":\"" + escapeJson(e.getMessage()) + "\"}");
+            }
         }
     }
 
