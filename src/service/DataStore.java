@@ -51,6 +51,12 @@ public class DataStore implements Serializable {
     // Students
     public void addStudent(Student student) {
         students.add(student);
+        if (student != null && student.getId() != null && student.getId().startsWith("STU")) {
+            try {
+                int num = Integer.parseInt(student.getId().substring(3));
+                studentCounter.updateAndGet(curr -> Math.max(curr, num));
+            } catch (NumberFormatException ignored) {}
+        }
     }
 
     public List<Student> getStudents() {
@@ -72,6 +78,12 @@ public class DataStore implements Serializable {
     // Companies
     public void addCompany(Company company) {
         companies.add(company);
+        if (company != null && company.getId() != null && company.getId().startsWith("CMP")) {
+            try {
+                int num = Integer.parseInt(company.getId().substring(3));
+                companyCounter.updateAndGet(curr -> Math.max(curr, num));
+            } catch (NumberFormatException ignored) {}
+        }
     }
 
     public List<Company> getCompanies() {
@@ -93,6 +105,12 @@ public class DataStore implements Serializable {
     // Job Postings
     public void addJobPosting(JobPosting job) {
         jobPostings.add(job);
+        if (job != null && job.getId() != null && job.getId().startsWith("JOB")) {
+            try {
+                int num = Integer.parseInt(job.getId().substring(3));
+                jobCounter.updateAndGet(curr -> Math.max(curr, num));
+            } catch (NumberFormatException ignored) {}
+        }
     }
 
     public List<JobPosting> getJobPostings() {
@@ -128,6 +146,12 @@ public class DataStore implements Serializable {
     // Applications
     public void addApplication(Application app) {
         applications.add(app);
+        if (app != null && app.getId() != null && app.getId().startsWith("APP")) {
+            try {
+                int num = Integer.parseInt(app.getId().substring(3));
+                applicationCounter.updateAndGet(curr -> Math.max(curr, num));
+            } catch (NumberFormatException ignored) {}
+        }
     }
 
     public List<Application> getApplications() {

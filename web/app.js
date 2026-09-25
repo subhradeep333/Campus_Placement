@@ -88,6 +88,18 @@ function fillDemo(role) {
     }
 }
 
+function togglePasswordVisibility(inputId, btn) {
+    const input = document.getElementById(inputId);
+    if (!input) return;
+    if (input.type === 'password') {
+        input.type = 'text';
+        btn.textContent = '🙈';
+    } else {
+        input.type = 'password';
+        btn.textContent = '👁️';
+    }
+}
+
 async function handleLoginSubmit(event) {
     event.preventDefault();
     const email = document.getElementById('loginEmail').value;
@@ -222,6 +234,22 @@ async function loadJobs() {
     }
 }
 
+function calculateSkillMatch(studentSkillsStr, requiredSkillsStr) {
+    if (!studentSkillsStr || !requiredSkillsStr) return 0;
+    const studentSkills = studentSkillsStr.toLowerCase().split(',').map(s => s.trim()).filter(Boolean);
+    const reqSkills = requiredSkillsStr.toLowerCase().split(',').map(s => s.trim()).filter(Boolean);
+    if (reqSkills.length === 0) return 100;
+
+    let matches = 0;
+    reqSkills.forEach(req => {
+        if (studentSkills.some(st => st.includes(req) || req.includes(st))) {
+            matches++;
+        }
+    });
+
+    return Math.min(100, Math.round((matches / reqSkills.length) * 100));
+}
+
 function renderJobs(jobs) {
     const grid = document.getElementById('jobsGrid');
     if (jobs.length === 0) {
@@ -229,23 +257,45 @@ function renderJobs(jobs) {
         return;
     }
 
-    grid.innerHTML = jobs.map(j => `
-        <div class="job-card">
-            <div>
-                <div class="job-header">
-                    <span class="company-name-tag">🏢 ${escapeHtml(j.companyName)}</span>
-                    <span class="job-pkg">💰 ${j.packageLpa} LPA</span>
+    grid.innerHTML = jobs.map(j => {
+        let aiBadge = '';
+        if (currentUser && currentUser.role === 'STUDENT') {
+            const matchPct = calculateSkillMatch(currentUser.skills, j.requiredSkills);
+            const cgpaMet = (currentUser.cgpa || 0) >= j.minCgpa;
+            aiBadge = `
+                <div class="ai-match-pill ${matchPct >= 50 && cgpaMet ? 'match-high' : 'match-med'}">
+                    <span>⚡ <strong>${matchPct}% Skill Match</strong></span>
+                    <span>•</span>
+                    <span>${cgpaMet ? 'CGPA Cutoff Met ✔' : 'Below Cutoff ⚠️'}</span>
                 </div>
-                <h3 class="job-title">${escapeHtml(j.title)}</h3>
-                <p class="job-details">${escapeHtml(j.description)}</p>
-                <div class="job-skills">
-                    ${j.requiredSkills.split(',').map(s => `<span class="skill-tag">${escapeHtml(s.trim())}</span>`).join('')}
-                    <span class="skill-tag" style="color:var(--primary-cyan);">Min CGPA: ${j.minCgpa}</span>
+            `;
+        } else {
+            aiBadge = `
+                <div class="ai-match-pill match-info">
+                    <span>✨ AI Matcher Available (Log in as Student to evaluate match)</span>
                 </div>
+            `;
+        }
+
+        return `
+            <div class="job-card">
+                <div>
+                    <div class="job-header">
+                        <span class="company-name-tag">🏢 ${escapeHtml(j.companyName)}</span>
+                        <span class="job-pkg">💰 ${j.packageLpa} LPA</span>
+                    </div>
+                    <h3 class="job-title">${escapeHtml(j.title)}</h3>
+                    <p class="job-details">${escapeHtml(j.description)}</p>
+                    <div class="job-skills">
+                        ${j.requiredSkills.split(',').map(s => `<span class="skill-tag">${escapeHtml(s.trim())}</span>`).join('')}
+                        <span class="skill-tag" style="color:var(--primary-cyan);">Min CGPA: ${j.minCgpa}</span>
+                    </div>
+                    ${aiBadge}
+                </div>
+                <button class="apply-btn" onclick="applyJob('${j.id}')">📝 Apply Now</button>
             </div>
-            <button class="apply-btn" onclick="applyJob('${j.id}')">📝 Apply Now</button>
-        </div>
-    `).join('');
+        `;
+    }).join('');
 }
 
 function filterJobs() {
@@ -305,6 +355,73 @@ async function applyJob(jobId) {
     }
 }
 
+// --- Drag & Drop CV File Handlers ---
+
+function handleDragOver(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    const zone = document.getElementById('cvDropZone');
+    if (zone) zone.classList.add('dragover');
+}
+
+function handleDragLeave(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    const zone = document.getElementById('cvDropZone');
+    if (zone) zone.classList.remove('dragover');
+}
+
+function handleFileDrop(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    const zone = document.getElementById('cvDropZone');
+    if (zone) zone.classList.remove('dragover');
+
+    const files = e.dataTransfer.files;
+    if (files && files.length > 0) {
+        processCvFile(files[0]);
+    }
+}
+
+function handleCvFileSelect(e) {
+    const files = e.target.files;
+    if (files && files.length > 0) {
+        processCvFile(files[0]);
+    }
+}
+
+function processCvFile(file) {
+    if (!file) return;
+
+    const maxSize = 10 * 1024 * 1024;
+    if (file.size > maxSize) {
+        showToast('File is too large! Maximum size allowed is 10MB.', 'error');
+        return;
+    }
+
+    const formattedSize = file.size > 1024 * 1024 
+        ? (file.size / (1024 * 1024)).toFixed(2) + ' MB'
+        : (file.size / 1024).toFixed(1) + ' KB';
+
+    document.getElementById('fileNameText').textContent = file.name;
+    document.getElementById('fileSizeText').textContent = formattedSize;
+    document.getElementById('cvFilePath').value = `/uploads/${file.name}`;
+
+    document.getElementById('dropZoneContent').classList.add('hidden');
+    document.getElementById('filePreviewBox').classList.remove('hidden');
+
+    showToast(`Attached file: ${file.name}`, 'success');
+}
+
+function removeCvFile(e) {
+    if (e) e.stopPropagation();
+    document.getElementById('cvFileInput').value = '';
+    document.getElementById('cvFilePath').value = '';
+
+    document.getElementById('filePreviewBox').classList.add('hidden');
+    document.getElementById('dropZoneContent').classList.remove('hidden');
+}
+
 // --- Student Dashboard Logic ---
 
 async function loadStudentDashboard() {
@@ -316,6 +433,17 @@ async function loadStudentDashboard() {
     document.getElementById('cvSkills').value = currentUser.skills || '';
     document.getElementById('cvSummary').value = currentUser.cvSummary || '';
     document.getElementById('cvFilePath').value = currentUser.cvFilePath || '';
+
+    if (currentUser.cvFilePath) {
+        const parts = currentUser.cvFilePath.split('/');
+        const name = parts[parts.length - 1] || 'Attached_CV.pdf';
+        document.getElementById('fileNameText').textContent = name;
+        document.getElementById('fileSizeText').textContent = 'Uploaded Document';
+        document.getElementById('dropZoneContent').classList.add('hidden');
+        document.getElementById('filePreviewBox').classList.remove('hidden');
+    } else {
+        removeCvFile();
+    }
 
     const badge = document.getElementById('cvStatusBadge');
     if (currentUser.hasSubmittedCv) {
@@ -333,8 +461,9 @@ async function loadStudentDashboard() {
         const tbody = document.getElementById('studentAppsTableBody');
 
         if (apps.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="5" class="empty-cell">You have not applied for any job openings yet.</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="6" class="empty-cell">You have not applied for any job openings yet.</td></tr>`;
         } else {
+            window.cachedStudentApps = apps;
             tbody.innerHTML = apps.map(a => `
                 <tr>
                     <td><strong>${a.id}</strong></td>
@@ -342,6 +471,11 @@ async function loadStudentDashboard() {
                     <td>${escapeHtml(a.companyName)}</td>
                     <td>${a.appliedDate}</td>
                     <td><span class="status-pill status-${a.status.toLowerCase()}">${a.status}</span></td>
+                    <td>
+                        ${a.status === 'ACCEPTED' || a.status === 'SHORTLISTED' 
+                            ? `<button class="action-btn" style="background:rgba(0,230,118,0.15); border-color:#00e676; color:#00e676;" onclick="openOfferModal('${a.id}')">📜 View Offer Letter</button>` 
+                            : '<span style="color:var(--text-muted); font-size:0.8rem;">Pending Review</span>'}
+                    </td>
                 </tr>
             `).join('');
         }
@@ -509,6 +643,72 @@ function openCvModal(appId) {
 
 function closeCvModal() {
     document.getElementById('cvModal').classList.remove('active');
+}
+
+// Modal Digital Placement Offer Letter Generator
+function openOfferModal(appId) {
+    let app = (window.cachedApps || []).find(a => a.id === appId);
+    if (!app && window.cachedStudentApps) {
+        app = window.cachedStudentApps.find(a => a.id === appId);
+    }
+    if (!app) return;
+
+    const modalBody = document.getElementById('offerModalBody');
+    modalBody.innerHTML = `
+        <div class="offer-letter-box">
+            <div class="offer-watermark">PLACED</div>
+            <div class="offer-header">
+                <h1>🎓 OFFICIAL PLACEMENT OFFER LETTER</h1>
+                <p style="color:var(--text-muted); font-size:0.85rem;">Campus Recruitment & Placement Authority • Session 2026</p>
+            </div>
+            
+            <p style="margin-bottom:1.25rem; line-height:1.7; font-size:1.02rem;">
+                Dear <strong>${escapeHtml(app.studentName)}</strong>,<br>
+                We are delighted to confirm your official placement selection for the role of <strong>${escapeHtml(app.jobTitle)}</strong> at <strong>${escapeHtml(app.companyName)}</strong>. On behalf of the hiring board, congratulations on passing all selection rounds!
+            </p>
+
+            <div class="offer-details-grid">
+                <div class="offer-item">
+                    <span>Candidate Name</span>
+                    <strong>${escapeHtml(app.studentName)}</strong>
+                </div>
+                <div class="offer-item">
+                    <span>Department / Branch</span>
+                    <strong>${escapeHtml(app.studentBranch)} (CGPA: ${app.studentCgpa})</strong>
+                </div>
+                <div class="offer-item">
+                    <span>Hiring Company</span>
+                    <strong>${escapeHtml(app.companyName)}</strong>
+                </div>
+                <div class="offer-item">
+                    <span>Selected Role</span>
+                    <strong>${escapeHtml(app.jobTitle)}</strong>
+                </div>
+                <div class="offer-item">
+                    <span>Verification Reference ID</span>
+                    <strong>${app.id}</strong>
+                </div>
+                <div class="offer-item">
+                    <span>Issued Date</span>
+                    <strong>${app.appliedDate || 'Current Session 2026'}</strong>
+                </div>
+            </div>
+
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-top:1.5rem; padding-top:1rem; border-top:1px solid rgba(255,255,255,0.1);">
+                <div class="offer-stamp">VERIFIED OFFER ✔</div>
+                <div style="text-align:right;">
+                    <p style="font-size:0.8rem; color:var(--text-muted);">Placement Officer Signature</p>
+                    <p style="font-family:'Outfit',sans-serif; color:var(--primary-cyan); font-weight:700;">Campus Placement Cell 📜</p>
+                </div>
+            </div>
+        </div>
+    `;
+
+    document.getElementById('offerModal').classList.add('active');
+}
+
+function closeOfferModal() {
+    document.getElementById('offerModal').classList.remove('active');
 }
 
 // Toast Notifications

@@ -37,19 +37,23 @@ public class AuthService {
     }
 
     public User login(String email, String password) {
-        Optional<Student> studentOpt = dataStore.findStudentByEmail(email);
+        if (email == null || password == null) return null;
+        String cleanEmail = email.trim();
+        String cleanPass = password.trim();
+
+        Optional<Student> studentOpt = dataStore.findStudentByEmail(cleanEmail);
         if (studentOpt.isPresent()) {
             Student s = studentOpt.get();
-            if (s.getPassword().equals(password)) {
+            if (s.getPassword() != null && s.getPassword().trim().equals(cleanPass)) {
                 this.currentUser = s;
                 return s;
             }
         }
 
-        Optional<Company> companyOpt = dataStore.findCompanyByEmail(email);
+        Optional<Company> companyOpt = dataStore.findCompanyByEmail(cleanEmail);
         if (companyOpt.isPresent()) {
             Company c = companyOpt.get();
-            if (c.getPassword().equals(password)) {
+            if (c.getPassword() != null && c.getPassword().trim().equals(cleanPass)) {
                 this.currentUser = c;
                 return c;
             }

@@ -419,10 +419,128 @@ body {
     box-shadow: 0 0 0 3px rgba(0, 210, 255, 0.15);
 }
 
+.password-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+    width: 100%;
+}
+
+.password-wrapper input {
+    padding-right: 2.75rem;
+}
+
+.toggle-password-btn {
+    position: absolute;
+    right: 0.75rem;
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-size: 1.1rem;
+    padding: 0.2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.2s, color 0.2s;
+    user-select: none;
+}
+
+.toggle-password-btn:hover {
+    color: var(--primary-cyan);
+    transform: scale(1.15);
+}
+
 .form-row {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 1rem;
+}
+
+/* Drag & Drop Upload Zone */
+.drop-zone {
+    border: 2px dashed var(--border-card);
+    border-radius: 12px;
+    padding: 1.5rem;
+    text-align: center;
+    background: rgba(0, 0, 0, 0.2);
+    cursor: pointer;
+    transition: all 0.25s ease;
+    position: relative;
+}
+
+.drop-zone:hover, .drop-zone.dragover {
+    border-color: var(--primary-cyan);
+    background: rgba(0, 210, 255, 0.08);
+    box-shadow: 0 0 15px rgba(0, 210, 255, 0.15);
+}
+
+.drop-icon {
+    font-size: 2.2rem;
+    margin-bottom: 0.5rem;
+}
+
+.drop-title {
+    font-size: 0.95rem;
+    color: var(--text-main);
+    margin-bottom: 0.25rem;
+}
+
+.browse-link {
+    color: var(--primary-cyan);
+    text-decoration: underline;
+    font-weight: 600;
+}
+
+.drop-hint {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+}
+
+.file-preview-box {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid var(--primary-cyan);
+    padding: 0.75rem 1rem;
+    border-radius: 10px;
+    text-align: left;
+}
+
+.file-preview-box .file-icon {
+    font-size: 1.5rem;
+}
+
+.file-info {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+}
+
+.file-name {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text-main);
+    word-break: break-all;
+}
+
+.file-size {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+}
+
+.remove-file-btn {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    font-size: 0.9rem;
+    padding: 0.2rem;
+    transition: transform 0.2s;
+}
+
+.remove-file-btn:hover {
+    transform: scale(1.2);
 }
 
 /* Table Styling */
@@ -662,4 +780,105 @@ body {
 
 .hidden {
     display: none !important;
+}
+
+/* AI Skill Matcher Pill */
+.ai-match-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.4rem 0.85rem;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    margin-top: 0.75rem;
+    border: 1px solid transparent;
+}
+
+.ai-match-pill.match-high {
+    background: rgba(0, 230, 118, 0.12);
+    border-color: rgba(0, 230, 118, 0.3);
+    color: #00e676;
+}
+
+.ai-match-pill.match-med {
+    background: rgba(255, 171, 0, 0.12);
+    border-color: rgba(255, 171, 0, 0.3);
+    color: #ffab00;
+}
+
+.ai-match-pill.match-info {
+    background: rgba(0, 210, 255, 0.08);
+    border-color: rgba(0, 210, 255, 0.2);
+    color: var(--primary-cyan);
+}
+
+/* Digital Offer Letter Modal */
+.offer-letter-box {
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+    border: 2px solid var(--primary-cyan);
+    border-radius: 16px;
+    padding: 2rem;
+    color: #fff;
+    font-family: 'Inter', sans-serif;
+    box-shadow: 0 0 30px rgba(0, 210, 255, 0.15);
+    position: relative;
+    overflow: hidden;
+}
+
+.offer-header {
+    text-align: center;
+    border-bottom: 2px dashed rgba(255, 255, 255, 0.15);
+    padding-bottom: 1.25rem;
+    margin-bottom: 1.5rem;
+}
+
+.offer-header h1 {
+    font-family: 'Outfit', sans-serif;
+    font-size: 1.8rem;
+    color: var(--primary-cyan);
+    margin-bottom: 0.3rem;
+}
+
+.offer-watermark {
+    position: absolute;
+    right: -20px;
+    bottom: -20px;
+    font-size: 8rem;
+    opacity: 0.04;
+    user-select: none;
+    pointer-events: none;
+}
+
+.offer-details-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.25rem;
+    background: rgba(255, 255, 255, 0.03);
+    padding: 1.25rem;
+    border-radius: 12px;
+    margin-bottom: 1.5rem;
+}
+
+.offer-item span {
+    display: block;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+}
+
+.offer-item strong {
+    font-size: 1.05rem;
+    color: var(--text-main);
+}
+
+.offer-stamp {
+    display: inline-block;
+    border: 2px solid var(--accent-green);
+    color: var(--accent-green);
+    padding: 0.4rem 1rem;
+    border-radius: 8px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    transform: rotate(-3deg);
 }

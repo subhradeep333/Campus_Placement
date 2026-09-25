@@ -54,6 +54,10 @@
                         <span class="stat-label">Partner Companies</span>
                     </div>
                     <div class="stat-card">
+                        <span class="stat-num" style="color:var(--accent-green);">94.2%</span>
+                        <span class="stat-label">Placement Rate</span>
+                    </div>
+                    <div class="stat-card">
                         <span class="stat-num">35.0 LPA</span>
                         <span class="stat-label">Highest Package</span>
                     </div>
@@ -113,8 +117,24 @@
                             <textarea id="cvSummary" rows="4" placeholder="Detail your education, projects, achievements, and career goals..." required></textarea>
                         </div>
                         <div class="form-group">
-                            <label>Attachment Document Path / Link</label>
-                            <input type="text" id="cvFilePath" placeholder="/path/to/Alex_Resume.pdf or Google Drive link">
+                            <label>📄 Upload CV / Resume Document (Drag & Drop)</label>
+                            <div id="cvDropZone" class="drop-zone" onclick="document.getElementById('cvFileInput').click()" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleFileDrop(event)">
+                                <div class="drop-zone-content" id="dropZoneContent">
+                                    <div class="drop-icon">☁️</div>
+                                    <p class="drop-title"><strong>Drag & Drop your CV here</strong> or <span class="browse-link">browse file</span></p>
+                                    <p class="drop-hint">Supports PDF, DOCX, DOC, TXT (Max 10MB)</p>
+                                </div>
+                                <div class="file-preview-box hidden" id="filePreviewBox">
+                                    <span class="file-icon">📄</span>
+                                    <div class="file-info">
+                                        <span class="file-name" id="fileNameText">Resume.pdf</span>
+                                        <span class="file-size" id="fileSizeText">0 KB</span>
+                                    </div>
+                                    <button type="button" class="remove-file-btn" onclick="removeCvFile(event)" title="Remove file">❌</button>
+                                </div>
+                            </div>
+                            <input type="file" id="cvFileInput" accept=".pdf,.doc,.docx,.txt" style="display:none;" onchange="handleCvFileSelect(event)">
+                            <input type="hidden" id="cvFilePath">
                         </div>
                         <button type="submit" class="submit-btn">💾 Save & Publish CV</button>
                     </form>
@@ -134,10 +154,11 @@
                                     <th>Company</th>
                                     <th>Applied Date</th>
                                     <th>Status</th>
+                                    <th>Placement Offer</th>
                                 </tr>
                             </thead>
                             <tbody id="studentAppsTableBody">
-                                <tr><td colspan="5" class="empty-cell">No job applications submitted yet.</td></tr>
+                                <tr><td colspan="6" class="empty-cell">No job applications submitted yet.</td></tr>
                             </tbody>
                         </table>
                     </div>
@@ -230,7 +251,10 @@
                 </div>
                 <div class="form-group">
                     <label>Password</label>
-                    <input type="password" id="loginPassword" placeholder="••••••••" required>
+                    <div class="password-wrapper">
+                        <input type="password" id="loginPassword" placeholder="••••••••" required>
+                        <button type="button" class="toggle-password-btn" onclick="togglePasswordVisibility('loginPassword', this)" title="Show/Hide Password">👁️</button>
+                    </div>
                 </div>
                 <button type="submit" class="submit-btn full-btn">Sign In</button>
                 <div class="demo-login-box">
@@ -253,7 +277,10 @@
                 <div class="form-row">
                     <div class="form-group">
                         <label>Password</label>
-                        <input type="password" id="regStudentPass" placeholder="••••••••" required>
+                        <div class="password-wrapper">
+                            <input type="password" id="regStudentPass" placeholder="••••••••" required>
+                            <button type="button" class="toggle-password-btn" onclick="togglePasswordVisibility('regStudentPass', this)" title="Show/Hide Password">👁️</button>
+                        </div>
                     </div>
                     <div class="form-group">
                         <label>Phone Number</label>
@@ -286,7 +313,10 @@
                 <div class="form-row">
                     <div class="form-group">
                         <label>Password</label>
-                        <input type="password" id="regCompPass" placeholder="••••••••" required>
+                        <div class="password-wrapper">
+                            <input type="password" id="regCompPass" placeholder="••••••••" required>
+                            <button type="button" class="toggle-password-btn" onclick="togglePasswordVisibility('regCompPass', this)" title="Show/Hide Password">👁️</button>
+                        </div>
                     </div>
                     <div class="form-group">
                         <label>Industry</label>
@@ -321,6 +351,19 @@
             </div>
             <div class="cv-dossier-body" id="cvModalBody">
                 <!-- Rendered dynamically -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal 3: Digital Placement Offer Letter Certificate -->
+    <div class="modal-overlay" id="offerModal">
+        <div class="modal-card wide-card offer-card-modal">
+            <button class="close-modal" onclick="closeOfferModal()">✖</button>
+            <div id="offerModalBody">
+                <!-- Rendered dynamically -->
+            </div>
+            <div class="modal-footer" style="text-align:right; margin-top:1.5rem;">
+                <button class="primary-btn" onclick="window.print()">🖨️ Print / Save Official Placement Offer Certificate</button>
             </div>
         </div>
     </div>
